@@ -8,3 +8,5 @@
 /server.log
 /.settings/*.prefs
 /target
+bin
+/.cache-main

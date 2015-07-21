@@ -23,11 +23,15 @@ resolvers ++= Seq(
 )
 
 val akkaVersion = "2.3.12"
+val akkaExperimentalVersion = "1.0"
 
 libraryDependencies ++= Seq(
- "com.typesafe" % "config" % "1.2.1"
+  "com.typesafe" % "config" % "1.2.1"
  ,"ch.qos.logback" % "logback-classic" % "1.1.2"
  ,"com.typesafe.akka" % "akka-actor_2.11" % akkaVersion
  ,"com.typesafe.akka" % "akka-slf4j_2.11" % akkaVersion
  ,"com.typesafe.akka" % "akka-testkit_2.11" % akkaVersion
+ ,"com.typesafe.akka" % "akka-stream-experimental_2.11" % akkaExperimentalVersion
+ ,"com.typesafe.akka" % "akka-http-core-experimental_2.11" % akkaExperimentalVersion
+ ,"com.typesafe.akka" % "akka-http-experimental_2.11" % akkaExperimentalVersion
 )
