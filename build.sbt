@@ -32,6 +32,7 @@ libraryDependencies ++= Seq(
  ,"com.typesafe.akka" % "akka-slf4j_2.11" % akkaVersion
  ,"com.typesafe.akka" % "akka-testkit_2.11" % akkaVersion
  ,"com.typesafe.akka" % "akka-stream-experimental_2.11" % akkaExperimentalVersion
- ,"com.typesafe.akka" % "akka-http-core-experimental_2.11" % akkaExperimentalVersion
  ,"com.typesafe.akka" % "akka-http-experimental_2.11" % akkaExperimentalVersion
+ ,"org.fusesource.jansi" % "jansi" % "1.11"
+ ,"org.json4s" % "json4s-jackson_2.11" % "3.2.11"
 )

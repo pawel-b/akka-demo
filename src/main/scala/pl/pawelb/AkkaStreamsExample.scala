@@ -10,8 +10,7 @@ import java.time.LocalDateTime
 import scala.concurrent.Future
 import java.util.Date
 
-object BasicTransformation
-//extends App
+object BasicTransformation extends App
 {
 
     implicit val system = ActorSystem("Sys")
