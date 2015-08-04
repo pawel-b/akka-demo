@@ -26,6 +26,8 @@ trait BaseConfig {
     _.getString(path)
   }
 
+  def hasPath[T](path: String) = rootConfig.hasPath(path)
+
   private def hasPath[T](path: String, default: T)(get: Config => T): T = {
     if (rootConfig.hasPath(path)) get(rootConfig) else default
   }
