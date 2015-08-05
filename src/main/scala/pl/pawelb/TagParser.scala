@@ -36,7 +36,6 @@ object TagParser extends App {
 }
 
 trait ActorHttp extends AkkaDemoConfig{
-  
   implicit val formats = new org.json4s.DefaultFormats {
     override def dateFormatter = new java.text.SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssXXX")
   }
