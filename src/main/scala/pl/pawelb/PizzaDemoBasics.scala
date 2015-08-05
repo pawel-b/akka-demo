@@ -15,6 +15,8 @@ import akka.event.LoggingReceive
 import scala.concurrent.{ future, blocking}
 
 case class CloseCounter()
+
+//messages
 sealed trait PizzaMessage
 case class PizzaBulkRequest(howMany: Int) extends PizzaMessage
 case class PizzaRequest(cheeseNeeded: Int, whoWantsPizza: ActorRef) extends PizzaMessage
@@ -26,7 +28,7 @@ case class CheeseResponse(forPizzaRequest: PizzaRequest, amountOfCheese: Int) ex
 case class NoCheeseLeft(forPizzaRequest: PizzaRequest) extends CheeseMessage
 case class AddCheese(newCheese: Int) extends CheeseMessage
 
-
+//main
 object PizzaDemoBasics extends App {
   val system = ActorSystem("pizza-system")
   val pizzaCounterActor = system.actorOf(Props[PizzaCounter])
@@ -124,7 +126,7 @@ class CheeseRepository extends Actor with akka.actor.ActorLogging {
 
   def receive = LoggingReceive({
     case crq: CheeseRequest => {
-    val cheeseBeforeTake = cheeseLeft
+      val cheeseBeforeTake = cheeseLeft
       if (cheeseLeft > crq.amountOfCheese) {
 //        blocking {
 //          log.info("\t\tSleeping...")

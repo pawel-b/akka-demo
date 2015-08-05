@@ -35,7 +35,7 @@ object TagParser extends App {
 
 }
 
-trait ActorHttp extends AkkaDemoConfig{
+trait ActorWithHttp extends AkkaDemoConfig{
   
   implicit val formats = new org.json4s.DefaultFormats {
     override def dateFormatter = new java.text.SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssXXX")
@@ -51,7 +51,7 @@ trait ActorHttp extends AkkaDemoConfig{
   }
 }
 
-class FlickrTagParser extends Actor with ActorHttp with ActorLogging with AkkaDemoConfig {
+class FlickrTagParser extends Actor with ActorWithHttp with ActorLogging with AkkaDemoConfig {
   def receive = LoggingReceive({
     case FlickrAllRequest => {
       getPublicStreamImages.foreach { img => log.info(img.tags) }
