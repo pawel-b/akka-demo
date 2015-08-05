@@ -1,20 +1,17 @@
-import akka.actor.ActorSystem
-import akka.actor.Actor
+import akka.actor.{ActorRef, ActorSystem, Actor}
 import akka.testkit.{ImplicitSender, TestKit, TestActorRef}
 import org.scalatest._
-import pl.pawelb.{CheeseRepository, PizzaCounter}
+import pl.pawelb.pizza.{NoCheeseLeft, PizzaRequest, CheeseRequest, CheeseRepository}
 
-class ImplicitSenderTest extends TestKit(ActorSystem("testSystem"))
-// Using the ImplicitSender trait will automatically set `testActor` as the sender
-with ImplicitSender with WordSpecLike with MustMatchers {
+class CheeseRepositoryTest extends TestKit(ActorSystem("testSystem")) with ImplicitSender with WordSpecLike with MustMatchers {
 
-  "A simple actor" must {
-    "send back a result" in {
+  "A cheese repository actor without cheese" must {
+    "send back a NoCheeseLeft response" in {
+      val pizzaRequest = new PizzaRequest(5, null)
       // Creation of the TestActorRef
       val actorRef = TestActorRef[CheeseRepository]
-      actorRef ! "akka"
-      // This method assert that the `testActor` has received a specific message
-      expectMsg("Hello akka")
+      actorRef ! new CheeseRequest(pizzaRequest)
+      expectMsg(new NoCheeseLeft(pizzaRequest, 2))
     }
 
   }
