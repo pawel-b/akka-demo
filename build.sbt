@@ -36,4 +36,6 @@ libraryDependencies ++= Seq(
  ,"org.fusesource.jansi" % "jansi" % "1.11"
  ,"org.scalaj" %% "scalaj-http" % "1.1.5"
  ,"org.json4s" % "json4s-jackson_2.11" % "3.2.11"
+ ,"org.scalatest" % "scalatest_2.11" % "2.2.4" % "test"
+ ,"com.typesafe.akka" %% "akka-testkit" % akkaVersion % "test"
 )

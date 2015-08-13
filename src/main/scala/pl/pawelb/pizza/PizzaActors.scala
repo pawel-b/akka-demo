@@ -1,4 +1,4 @@
-package pl.pawelb.pizza
+package pl.pawelb
 
 import pl.pawelb.pizza._
 import akka.actor.Actor
