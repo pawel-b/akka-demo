@@ -17,23 +17,12 @@ import java.text.SimpleDateFormat
 
 //messages
 sealed trait FlickrMessage
+case class GetTagCount() extends FlickrMessage
 case class FlickrAllRequest() extends FlickrMessage
 case class FlickrAllResponse() extends FlickrMessage
 
 //dto
 case class FlickrImageInfo(title: String, link: String, dateTaken: Option[Date], description: String, published: Date, author: String, authorId: Option[String], tags: String)
-
-object TagParser extends App {
-  implicit val system = ActorSystem("imageParser")
-
-  val tagActor = system.actorOf(Props[FlickrTagParser])
-  tagActor ! FlickrAllRequest
-  
-  system.scheduler.scheduleOnce(10 seconds) {
-    system.shutdown()
-  }
-
-}
 
 trait ActorHttp extends AkkaDemoConfig{
   implicit val formats = new org.json4s.DefaultFormats {
@@ -50,10 +39,27 @@ trait ActorHttp extends AkkaDemoConfig{
   }
 }
 
-class FlickrTagParser extends Actor with ActorHttp with ActorLogging with AkkaDemoConfig {
+object TagParser extends App {
+  implicit val system = ActorSystem("imageParser")
+  val tagMain = system.actorOf(Props[FlickrTagMain])
+  system.scheduler.schedule(1 second, 1 second, tagMain, FlickrAllRequest())
+
+  system.scheduler.scheduleOnce(30 seconds) {
+    system.shutdown()
+  }
+
+}
+
+class FlickrTagMain extends Actor with ActorHttp with ActorLogging with AkkaDemoConfig {
+  val tagCounter = context.actorOf(Props[FlickrTagCounter])
+  context.system.scheduler.schedule(5 second, 5 second, tagCounter, GetTagCount())
+  
   def receive = LoggingReceive({
-    case FlickrAllRequest => {
-      getPublicStreamImages.foreach { img => log.info(img.tags) }
+    case req: FlickrAllRequest => {
+      getPublicStreamImages.foreach { 
+        val tagParser = context.actorOf(Props(new FlickrTagParser(tagCounter)))
+        tagParser ! _
+      }
     }
   })
 
@@ -62,4 +68,29 @@ class FlickrTagParser extends Actor with ActorHttp with ActorLogging with AkkaDe
       val parsedJson = parse(responseBody) \ "items"
       parsedJson.extract[List[FlickrImageInfo]]
   }
+
+}
+
+class FlickrTagParser(counterRef: ActorRef) extends Actor with ActorHttp with ActorLogging with AkkaDemoConfig {
+
+  def receive = LoggingReceive({
+    case req: FlickrImageInfo => {
+      req.tags.split(" ").filter(x => x != "").foreach { x => counterRef ! x }
+    }
+  })
+
+}
+
+class FlickrTagCounter extends Actor with ActorHttp with ActorLogging with AkkaDemoConfig {
+  var tagCount = new scala.collection.mutable.HashMap[String, Int]
+  
+  def receive = LoggingReceive({
+    case tag: String => {
+      tagCount(tag) = tagCount.getOrElse(tag, 0) + 1 
+    }
+    case getCount: GetTagCount => {
+      log.info("Tag count max {}", tagCount.toSeq.sortBy(f => f._2).takeRight(5))
+    }
+  })
+  
 }
