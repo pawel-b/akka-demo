@@ -5,7 +5,7 @@ import akka.event.LoggingReceive
 
 class CheeseRepository extends Actor with akka.actor.ActorLogging {
   var cheeseLeft: Int = 0
-  var timeMultiplier: Int = 1
+  var waitTime: Int = 1
 
   def addCheese(amountOfCheese: Int) = {
     cheeseLeft += amountOfCheese
@@ -19,20 +19,19 @@ class CheeseRepository extends Actor with akka.actor.ActorLogging {
   def receive = LoggingReceive({
     case crq: CheeseRequest => {
     val cheeseBeforeTake = cheeseLeft
-      if (cheeseLeft > crq.forPizzaRequest.cheeseNeeded) {
-        timeMultiplier = 1
-//        blocking {
-//          log.info("\t\tSleeping...")
-//          Thread.sleep(1000)
-//        }
+      if (cheeseLeft >= crq.forPizzaRequest.cheeseNeeded) {
+        waitTime = 1
+        //blocking
+        //log.info("\t\tSleeping...")
+        //Thread.sleep(1000)
         getCheese(crq.forPizzaRequest.cheeseNeeded)
         assert(cheeseBeforeTake == crq.forPizzaRequest.cheeseNeeded + cheeseLeft, "Wrong cheese amount")
         log.info("\t\tFrom {} cheese took {}, left: {}", cheeseBeforeTake, crq.forPizzaRequest.cheeseNeeded, cheeseLeft)
         sender ! CheeseResponse(crq.forPizzaRequest)
       } else {
-        timeMultiplier += 1
-        log.info("\t\tWe don't have enough cheese, wait {} seconds for some to appear...", timeMultiplier)
-        sender ! NoCheeseLeft(crq.forPizzaRequest, timeMultiplier)
+        waitTime += 1
+        log.info("\t\tWe don't have enough cheese, wait {} seconds for some to appear...", waitTime)
+        sender ! NoCheeseLeft(crq.forPizzaRequest, waitTime)
       }
     }
     case ca: AddCheese => {
