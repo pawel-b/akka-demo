@@ -17,14 +17,14 @@ import java.text.SimpleDateFormat
 
 //messages
 sealed trait FlickrMessage
-case class GetTagCount() extends FlickrMessage
-case class FlickrAllRequest() extends FlickrMessage
-case class FlickrAllResponse() extends FlickrMessage
+case class FlickrGetTagsRequest(userId: String) extends FlickrMessage
+case class TagCountRequest() extends FlickrMessage
+case class TagCountResponse(tagCounts: Map[String, Int]) extends FlickrMessage
 
 //dto
-case class FlickrImageInfo(title: String, link: String, dateTaken: Option[Date], description: String, published: Date, author: String, authorId: Option[String], tags: String)
+case class FlickrImageInfo(title: String, link: String, date_taken: Option[Date], description: String, published: Date, author: String, author_id: Option[String], tags: String)
 
-trait HttpEnabled extends AkkaDemoConfig{
+trait FlickrHttpEnabled extends AkkaDemoConfig{
   implicit val formats = new org.json4s.DefaultFormats {
     override def dateFormatter = new java.text.SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssXXX")
   }
@@ -37,55 +37,88 @@ trait HttpEnabled extends AkkaDemoConfig{
       }
       requestWithProxy.asString
   }
-}
 
-object TagParser extends App {
-  implicit val system = ActorSystem("imageParser")
-  val tagCounter = system.actorOf(Props[FlickrTagCounter])
-  val tagDownloader = system.actorOf(Props(new FlickrTagDownloader(tagCounter)))
-  system.scheduler.schedule(1 second, 1 second, tagDownloader, FlickrAllRequest())
-  system.scheduler.scheduleOnce(30 seconds, tagCounter, GetTagCount())
-}
-
-class FlickrTagDownloader(counterRef: ActorRef) extends Actor with HttpEnabled with ActorLogging with AkkaDemoConfig {
-  
-  def receive = LoggingReceive({
-    case req: FlickrAllRequest => {
-      getPublicStreamImages.foreach { 
-        val tagParser = context.actorOf(Props(new FlickrTagParser(counterRef)))
-        tagParser ! _
-      }
-    }
-  })
-
-  def getPublicStreamImages = {
-      val responseBody = makeHttpRequest(getString("flickr.url.publicAll")).body.replace("'", "\\\\u0027")
+  def getFlickrImageInfos(url: String) : List[FlickrImageInfo]= {
+      val responseBody = makeHttpRequest(url).body.replace("'", "\\\\u0027")
       val parsedJson = parse(responseBody) \ "items"
       parsedJson.extract[List[FlickrImageInfo]]
   }
 
+  def getFlickrUserIdsFromImageInfos(url: String) : List[String] = {
+    getFlickrImageInfos(url).map(i => i.author_id).flatten
+  }
+
+  def getFlickrTagsFromImageInfos(url: String) : List[String] = {
+    getFlickrImageInfos(url).map(i => i.tags).filter(x => x != "")
+  }
 }
 
-class FlickrTagParser(counterRef: ActorRef) extends Actor with HttpEnabled with ActorLogging with AkkaDemoConfig {
+object TagApp extends App with AkkaDemoConfig{
+  implicit val system = ActorSystem("imageParser")
+  val tagMain = system.actorOf(Props[FlickrTagMain])
+  tagMain ! FlickrGetTagsRequest(getString("flickr.userId"))
+}
 
+class FlickrTagMain extends Actor with ActorLogging with AkkaDemoConfig {
+  
+  def receive = {
+    case req: FlickrGetTagsRequest => {
+      val tagCounter = context.actorOf(Props[FlickrTagCounter])
+      val favouritesActor = context.actorOf(Props(new FlickrFavouritesInfoDownloader(tagCounter)))
+      val friendsFavouritesActor = context.actorOf(Props(new FlickrFriendsFavouritesInfoDownloader(tagCounter)))
+      favouritesActor ! req
+      friendsFavouritesActor ! req
+
+      context.system.scheduler.scheduleOnce(5 seconds, tagCounter, TagCountRequest())
+    }
+    case res: TagCountResponse => {
+      val topTags = res.tagCounts.toSeq.sortWith(_._2 > _._2).take(5)
+      log.info("Top tags: {}", topTags)
+
+      context.system.scheduler.scheduleOnce(5 seconds, new Runnable {
+        override def run(): Unit = {
+          context.system.shutdown
+        }
+      })
+    }
+  }
+}
+
+class FlickrFavouritesInfoDownloader(counterRef: ActorRef) extends Actor with FlickrHttpEnabled with ActorLogging {
   def receive = LoggingReceive({
-    case req: FlickrImageInfo => {
-      req.tags.split(" ").filter(x => x != "").foreach { x => counterRef ! x }
+    case req: FlickrGetTagsRequest => {
+      getFlickrTagsFromImageInfos(String.format(getString("flickr.url.favourites"), req.userId)).foreach { tag => counterRef ! tag }
+      context.stop(self)
     }
   })
-
 }
 
-class FlickrTagCounter extends Actor with HttpEnabled with ActorLogging with AkkaDemoConfig {
+class FlickrFriendsFavouritesInfoDownloader(counterRef: ActorRef) extends Actor with FlickrHttpEnabled with ActorLogging {
+  def receive = LoggingReceive({
+    case req: FlickrGetTagsRequest => {
+      val userIds = getFlickrUserIdsFromImageInfos(String.format(getString("flickr.url.friends"), req.userId))
+      log.info("Friend ids: {}", userIds)
+      userIds.foreach {id => 
+        val favouritesActor = context.actorOf(Props(new FlickrFavouritesInfoDownloader(counterRef)))
+        favouritesActor ! FlickrGetTagsRequest(id)
+      }
+      context.stop(self)
+    }
+  })
+}
+
+class FlickrTagCounter extends Actor with ActorLogging with AkkaDemoConfig {
   var tagCount = new scala.collection.mutable.HashMap[String, Int]
   
   def receive = LoggingReceive({
-    case tag: String => {
-      tagCount(tag) = tagCount.getOrElse(tag, 0) + 1 
+    case req: String => {
+      req.split(" ").foreach {tag =>       
+        tagCount(tag) = tagCount.getOrElse(tag, 0) + 1
+      }
     }
-    case getCount: GetTagCount => {
-      log.info("Tag count max {}", tagCount.toSeq.sortBy(f => f._2).takeRight(5))
-      context.system.shutdown()
+    case getCount: TagCountRequest => {
+      sender ! TagCountResponse(tagCount.toMap)
+      context.stop(self)
     }
   })
   
