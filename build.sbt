@@ -22,7 +22,7 @@ resolvers ++= Seq(
   , "sourceforge"                      at "http://oss.sonatype.org/content/groups/sourceforge/"
 )
 
-val akkaVersion = "2.3.12"
+val akkaVersion = "2.3.13"
 val akkaExperimentalVersion = "1.0"
 
 libraryDependencies ++= Seq(

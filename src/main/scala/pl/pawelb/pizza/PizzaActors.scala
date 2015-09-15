@@ -15,6 +15,13 @@ import ch.qos.logback.classic.Logger
 import akka.event.LoggingReceive
 import scala.concurrent.{ future, blocking}
 
+case class CloseCounter()
+
+sealed trait PizzaMessage
+case class PizzaBulkRequest(howMany: Int) extends PizzaMessage
+case class PizzaRequest(cheeseNeeded: Int, whoWantsPizza: ActorRef) extends PizzaMessage
+case class PizzaResponse(amountOfCheese: Int) extends PizzaMessage
+
 class PizzaCounter extends Actor with akka.actor.ActorLogging {
   val randoms = new Random
   var pizzasToServe = 0
@@ -69,7 +76,6 @@ class PizzaCounter extends Actor with akka.actor.ActorLogging {
 }
 
 class PizzaMaker(cheeseVault: ActorRef) extends Actor with akka.actor.ActorLogging {
-  implicit val timeout = Timeout(60 seconds)
   val randoms = new Random
 
   def receive = LoggingReceive({
@@ -77,7 +83,7 @@ class PizzaMaker(cheeseVault: ActorRef) extends Actor with akka.actor.ActorLoggi
       log.info("\tGot pizza request, I need {} cheese for this pizza", prq.cheeseNeeded)
       
       prq.cheeseNeeded match {
-        case x: Int if (x > 0) => cheeseVault ? CheeseRequest(prq) pipeTo self
+        case x: Int if (x > 0) => cheeseVault ! CheeseRequest(prq)
         case y => prq.whoWantsPizza ! PizzaResponse(y)
       }
       

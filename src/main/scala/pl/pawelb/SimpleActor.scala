@@ -16,15 +16,20 @@ import scala.io.Source
 import java.text.SimpleDateFormat
 
 object SimpleActors extends App {
-  implicit val system = ActorSystem("simpleActors")
+  val system = ActorSystem("simpleActors")
   val greetingActor = system.actorOf(Props[GreetingActor])
   greetingActor ! "Hello"
+  system.scheduler.scheduleOnce(1 seconds, new Runnable {
+    override def run(): Unit = {
+      system.shutdown
+    }
+  })
 }
 
-class GreetingActor extends Actor {
+class GreetingActor extends Actor with ActorLogging {
   def receive = {
     case message: String => {
-      sender ! "Hi" 
+      log.info("Message received: {}", message)
     }
   }
 }

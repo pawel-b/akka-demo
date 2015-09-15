@@ -6,8 +6,13 @@ import scala.concurrent.ExecutionContext.Implicits.global
 
 object CheckMaxThreads extends App {
 
-  for (i <- 1 to 100000) {
-    if (i % 100 == 0) println("starting thread " + i)
+  val start = System.currentTimeMillis()
+  for (i <- 1 to 3000000) {
+    if (i % 100 == 0) println(s"starting actors $i")
+    if (i == 10000) {
+      val end = System.currentTimeMillis() - start
+      println(s"starting $i actors took $end ms")
+    } 
     new PlainThread().start()
   }
 
@@ -16,7 +21,7 @@ object CheckMaxThreads extends App {
 
 class PlainThread extends Thread {
   override def run = {
-    Thread.sleep(100000)
+    Thread.sleep(10000000)
   }
 }
 
@@ -24,8 +29,13 @@ object CheckMaxActors extends App {
 
   implicit val system = ActorSystem("testActorSystem")
 
+  val start = System.currentTimeMillis()
   for (i <- 1 to 3000000) {
-    if (i % 100 == 0) println("starting actor " + i)
+    if (i % 100 == 0) println(s"starting actors $i")
+    if (i == 10000) {
+      val end = System.currentTimeMillis() - start
+      println(s"starting $i actors took $end ms")
+    } 
     system.actorOf(Props[PlainActor])
   }
   

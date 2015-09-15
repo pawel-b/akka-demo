@@ -64,12 +64,12 @@ class FlickrTagMain extends Actor with ActorLogging with AkkaDemoConfig {
   def receive = {
     case req: FlickrGetTagsRequest => {
       val tagCounter = context.actorOf(Props[FlickrTagCounter])
-      val favouritesActor = context.actorOf(Props(new FlickrFavouritesInfoDownloader(tagCounter)))
-      val friendsFavouritesActor = context.actorOf(Props(new FlickrFriendsFavouritesInfoDownloader(tagCounter)))
+      val favouritesActor = context.actorOf(Props(classOf[FlickrFavouritesInfoDownloader], tagCounter))
+      val friendsFavouritesActor = context.actorOf(Props(classOf[FlickrFriendsFavouritesInfoDownloader], tagCounter))
       favouritesActor ! req
       friendsFavouritesActor ! req
 
-      context.system.scheduler.scheduleOnce(5 seconds, tagCounter, TagCountRequest())
+      context.system.scheduler.scheduleOnce(10 seconds, tagCounter, TagCountRequest())
     }
     case res: TagCountResponse => {
       val topTags = res.tagCounts.toSeq.sortWith(_._2 > _._2).take(5)
@@ -99,7 +99,7 @@ class FlickrFriendsFavouritesInfoDownloader(counterRef: ActorRef) extends Actor 
       val userIds = getFlickrUserIdsFromImageInfos(String.format(getString("flickr.url.friends"), req.userId))
       log.info("Friend ids: {}", userIds)
       userIds.foreach {id => 
-        val favouritesActor = context.actorOf(Props(new FlickrFavouritesInfoDownloader(counterRef)))
+        val favouritesActor = context.actorOf(Props(classOf[FlickrFavouritesInfoDownloader], counterRef))
         favouritesActor ! FlickrGetTagsRequest(id)
       }
       context.stop(self)

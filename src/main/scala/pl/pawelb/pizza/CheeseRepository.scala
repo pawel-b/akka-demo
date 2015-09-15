@@ -2,6 +2,13 @@ package pl.pawelb.pizza
 
 import akka.actor.Actor
 import akka.event.LoggingReceive
+import pl.pawelb.PizzaRequest
+
+sealed trait CheeseMessage
+case class CheeseRequest(forPizzaRequest: PizzaRequest) extends CheeseMessage
+case class CheeseResponse(forPizzaRequest: PizzaRequest) extends CheeseMessage
+case class NoCheeseLeft(forPizzaRequest: PizzaRequest, secondsToWait: Int) extends CheeseMessage
+case class AddCheese(newCheese: Int) extends CheeseMessage
 
 class CheeseRepository extends Actor with akka.actor.ActorLogging {
   var cheeseLeft: Int = 0
@@ -15,17 +22,17 @@ class CheeseRepository extends Actor with akka.actor.ActorLogging {
   def getCheese(amountOfCheese: Int) = {
     cheeseLeft -= amountOfCheese
   }
-  
+
   def receive = LoggingReceive({
     case crq: CheeseRequest => {
-    val cheeseBeforeTake = cheeseLeft
+      val cheeseBeforeTake = cheeseLeft
       if (cheeseLeft >= crq.forPizzaRequest.cheeseNeeded) {
         waitTime = 1
         //blocking
         //log.info("\t\tSleeping...")
         //Thread.sleep(1000)
         getCheese(crq.forPizzaRequest.cheeseNeeded)
-        assert(cheeseBeforeTake == crq.forPizzaRequest.cheeseNeeded + cheeseLeft, "Wrong cheese amount")
+        assert(cheeseBeforeTake == crq.forPizzaRequest.cheeseNeeded + cheeseLeft, "Wrong cheese amount!")
         log.info("\t\tFrom {} cheese took {}, left: {}", cheeseBeforeTake, crq.forPizzaRequest.cheeseNeeded, cheeseLeft)
         sender ! CheeseResponse(crq.forPizzaRequest)
       } else {
@@ -40,3 +47,4 @@ class CheeseRepository extends Actor with akka.actor.ActorLogging {
   })
 
 }
+
