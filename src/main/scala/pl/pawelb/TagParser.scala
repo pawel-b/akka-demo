@@ -18,11 +18,13 @@ import java.text.SimpleDateFormat
 //messages
 sealed trait FlickrMessage
 case class FlickrGetTagsRequest(userId: String) extends FlickrMessage
+case class FlickrGetTagsResponse(tags: List[String]) extends FlickrMessage
 case class TagCountRequest() extends FlickrMessage
 case class TagCountResponse(tagCounts: Map[String, Int]) extends FlickrMessage
 
 //dto
-case class FlickrImageInfo(title: String, link: String, date_taken: Option[Date], description: String, published: Date, author: String, author_id: Option[String], tags: String)
+case class FlickrImageInfo(title: String, link: String, date_taken: Option[Date]
+, description: String, published: Date, author: String, author_id: Option[String], tags: String)
 
 trait FlickrHttpEnabled extends AkkaDemoConfig{
   implicit val formats = new org.json4s.DefaultFormats {
@@ -49,13 +51,15 @@ trait FlickrHttpEnabled extends AkkaDemoConfig{
   }
 
   def getFlickrTagsFromImageInfos(url: String) : List[String] = {
-    getFlickrImageInfos(url).map(i => i.tags).filter(x => x != "")
+    getFlickrImageInfos(url).map(i => i.tags).filter(x => x != "").flatMap(ts => ts.split(" "))
   }
 }
 
 object TagApp extends App with AkkaDemoConfig{
-  implicit val system = ActorSystem("imageParser")
-  val tagMain = system.actorOf(Props[FlickrTagMain])
+  val ACTOR_PATH_TAG_COUNTER = "/user/tagMain/tagCounter"
+
+  implicit val system = ActorSystem("flickrTagDownloader")
+  val tagMain = system.actorOf(Props[FlickrTagMain], "tagMain")
   tagMain ! FlickrGetTagsRequest(getString("flickr.userId"))
 }
 
@@ -63,9 +67,9 @@ class FlickrTagMain extends Actor with ActorLogging with AkkaDemoConfig {
   
   def receive = {
     case req: FlickrGetTagsRequest => {
-      val tagCounter = context.actorOf(Props[FlickrTagCounter])
-      val favouritesActor = context.actorOf(Props(classOf[FlickrFavouritesInfoDownloader], tagCounter))
-      val friendsFavouritesActor = context.actorOf(Props(classOf[FlickrFriendsFavouritesInfoDownloader], tagCounter))
+      val tagCounter = context.actorOf(Props[FlickrTagCounter], "tagCounter")
+      val favouritesActor = context.actorOf(Props(classOf[FlickrFavouritesInfoDownloader]))
+      val friendsFavouritesActor = context.actorOf(Props(classOf[FlickrFriendsFavouritesInfoDownloader]))
       favouritesActor ! req
       friendsFavouritesActor ! req
 
@@ -84,22 +88,23 @@ class FlickrTagMain extends Actor with ActorLogging with AkkaDemoConfig {
   }
 }
 
-class FlickrFavouritesInfoDownloader(counterRef: ActorRef) extends Actor with FlickrHttpEnabled with ActorLogging {
+class FlickrFavouritesInfoDownloader() extends Actor with FlickrHttpEnabled with ActorLogging {
   def receive = LoggingReceive({
     case req: FlickrGetTagsRequest => {
-      getFlickrTagsFromImageInfos(String.format(getString("flickr.url.favourites"), req.userId)).foreach { tag => counterRef ! tag }
+      val tagList = getFlickrTagsFromImageInfos(String.format(getString("flickr.url.favourites"), req.userId))
+      context.actorSelection(TagApp.ACTOR_PATH_TAG_COUNTER) ! new FlickrGetTagsResponse(tagList)
       context.stop(self)
     }
   })
 }
 
-class FlickrFriendsFavouritesInfoDownloader(counterRef: ActorRef) extends Actor with FlickrHttpEnabled with ActorLogging {
+class FlickrFriendsFavouritesInfoDownloader() extends Actor with FlickrHttpEnabled with ActorLogging {
   def receive = LoggingReceive({
     case req: FlickrGetTagsRequest => {
       val userIds = getFlickrUserIdsFromImageInfos(String.format(getString("flickr.url.friends"), req.userId))
       log.info("Friend ids: {}", userIds)
       userIds.foreach {id => 
-        val favouritesActor = context.actorOf(Props(classOf[FlickrFavouritesInfoDownloader], counterRef))
+        val favouritesActor = context.actorOf(Props(classOf[FlickrFavouritesInfoDownloader]))
         favouritesActor ! FlickrGetTagsRequest(id)
       }
       context.stop(self)
@@ -111,8 +116,8 @@ class FlickrTagCounter extends Actor with ActorLogging with AkkaDemoConfig {
   var tagCount = new scala.collection.mutable.HashMap[String, Int]
   
   def receive = LoggingReceive({
-    case req: String => {
-      req.split(" ").foreach {tag =>       
+    case res: FlickrGetTagsResponse => {
+      res.tags.foreach {tag =>
         tagCount(tag) = tagCount.getOrElse(tag, 0) + 1
       }
     }
