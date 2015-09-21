@@ -4,6 +4,7 @@ import akka.actor.ActorSystem
 import akka.testkit._
 import org.scalatest._
 import pl.pawelb.pizza._
+import pl.pawelb.PizzaRequest
 
 class CheeseRepositoryTest extends TestKit(ActorSystem("testSystem")) with ImplicitSender with WordSpecLike with MustMatchers {
 
@@ -14,7 +15,6 @@ class CheeseRepositoryTest extends TestKit(ActorSystem("testSystem")) with Impli
       cheeseRepository ! new CheeseRequest(pizzaRequest)
       expectMsg(new NoCheeseLeft(pizzaRequest, 2))
     }
-
   }
 
   "A cheese repository actor with cheese" must {
@@ -32,6 +32,5 @@ class CheeseRepositoryTest extends TestKit(ActorSystem("testSystem")) with Impli
       cheeseRepository ! new CheeseRequest(pizzaRequest)
       expectMsg(new NoCheeseLeft(pizzaRequest, 2))
     }
-
   }
 }

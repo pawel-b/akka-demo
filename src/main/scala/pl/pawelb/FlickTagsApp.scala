@@ -55,7 +55,7 @@ trait FlickrHttpEnabled extends AkkaDemoConfig{
   }
 }
 
-object TagApp extends App with AkkaDemoConfig{
+object FlickrTagsApp extends App with AkkaDemoConfig{
   val ACTOR_PATH_TAG_COUNTER = "/user/tagMain/tagCounter"
 
   implicit val system = ActorSystem("flickrTagDownloader")
@@ -68,8 +68,8 @@ class FlickrTagMain extends Actor with ActorLogging with AkkaDemoConfig {
   def receive = {
     case req: FlickrGetTagsRequest => {
       val tagCounter = context.actorOf(Props[FlickrTagCounter], "tagCounter")
-      val favouritesActor = context.actorOf(Props(classOf[FlickrFavouritesInfoDownloader]))
-      val friendsFavouritesActor = context.actorOf(Props(classOf[FlickrFriendsFavouritesInfoDownloader]))
+      val favouritesActor = context.actorOf(Props(classOf[FlickrFavouritesInfoDownloader]), "userFavouritesDownloader")
+      val friendsFavouritesActor = context.actorOf(Props(classOf[FlickrFriendsFavouritesInfoDownloader]), "friendsFavourites")
       favouritesActor ! req
       friendsFavouritesActor ! req
 
@@ -91,8 +91,9 @@ class FlickrTagMain extends Actor with ActorLogging with AkkaDemoConfig {
 class FlickrFavouritesInfoDownloader() extends Actor with FlickrHttpEnabled with ActorLogging {
   def receive = LoggingReceive({
     case req: FlickrGetTagsRequest => {
+      log.info("Making a request to Flickr server")
       val tagList = getFlickrTagsFromImageInfos(String.format(getString("flickr.url.favourites"), req.userId))
-      context.actorSelection(TagApp.ACTOR_PATH_TAG_COUNTER) ! new FlickrGetTagsResponse(tagList)
+      context.actorSelection(FlickrTagsApp.ACTOR_PATH_TAG_COUNTER) ! new FlickrGetTagsResponse(tagList)
       context.stop(self)
     }
   })
@@ -104,10 +105,9 @@ class FlickrFriendsFavouritesInfoDownloader() extends Actor with FlickrHttpEnabl
       val userIds = getFlickrUserIdsFromImageInfos(String.format(getString("flickr.url.friends"), req.userId))
       log.info("Friend ids: {}", userIds)
       userIds.foreach {id => 
-        val favouritesActor = context.actorOf(Props(classOf[FlickrFavouritesInfoDownloader]))
+        val favouritesActor = context.actorOf(Props(classOf[FlickrFavouritesInfoDownloader]), "friendsFavouritesDownloader_" + id)
         favouritesActor ! FlickrGetTagsRequest(id)
       }
-      context.stop(self)
     }
   })
 }

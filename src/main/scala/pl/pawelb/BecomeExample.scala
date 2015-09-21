@@ -10,6 +10,7 @@ import scala.concurrent.ExecutionContext.Implicits.global
 
 sealed trait MinionMessage
 case class DogMessage() extends MinionMessage
+case class CatMessage() extends MinionMessage
 case class BananaMessage() extends MinionMessage
 
 object MinionBecomeApp extends App with AkkaDemoConfig{

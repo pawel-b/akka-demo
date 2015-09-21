@@ -4,7 +4,7 @@
 	<appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
 		<target>System.out</target>
 		<encoder>
-			<pattern>%date{yyyy-MM-dd'T'HH:mm:ss.SSS} %5level [%.15thread]] [%.20logger{30}:%line] %msg%n</pattern>
+			<pattern>%date{HH:mm:ss.SSS} %5level [%.15thread]] [%.20logger{30}:%line] %msg%n</pattern>
 		</encoder>
 	</appender>
 
@@ -13,7 +13,7 @@
 		<append>false</append>
 		<encoder>
 			<charset>UTF-8</charset>
-			<pattern>%date{yyyy-MM-dd'T'HH:mm:ss.SSS} [%logger] %msg%n</pattern>
+			<pattern>%date{HH:mm:ss.SSS} [%logger] %msg%n</pattern>
 		</encoder>
 	</appender>
 
