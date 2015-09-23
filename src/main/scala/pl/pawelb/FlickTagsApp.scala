@@ -26,6 +26,9 @@ case class TagCountResponse(tagCounts: Map[String, Int]) extends FlickrMessage
 case class FlickrImageInfo(title: String, link: String, date_taken: Option[Date]
 , description: String, published: Date, author: String, author_id: Option[String], tags: String)
 
+/**
+ * Http req extracted to a trait
+ */
 trait FlickrHttpEnabled extends AkkaDemoConfig{
   implicit val formats = new org.json4s.DefaultFormats {
     override def dateFormatter = new java.text.SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssXXX")
@@ -55,6 +58,9 @@ trait FlickrHttpEnabled extends AkkaDemoConfig{
   }
 }
 
+/**
+ * Application to get tag count of recent users favourite photos(and friends photos too)
+ */
 object FlickrTagsApp extends App with AkkaDemoConfig{
   val ACTOR_PATH_TAG_COUNTER = "/user/tagMain/tagCounter"
 
@@ -78,6 +84,7 @@ class FlickrTagMain extends Actor with ActorLogging with AkkaDemoConfig {
     case res: TagCountResponse => {
       val topTags = res.tagCounts.toSeq.sortWith(_._2 > _._2).take(5)
       log.info("Top tags: {}", topTags)
+      context.children.foreach(child => context.stop(child))
 
       context.system.scheduler.scheduleOnce(5 seconds, new Runnable {
         override def run(): Unit = {

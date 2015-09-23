@@ -10,6 +10,10 @@ import java.time.LocalDateTime
 import scala.concurrent.Future
 import java.util.Date
 
+/**
+ * Basic example of Akka streams usage
+ * We have two sources: words, some integers and some pipes that can process them
+ */
 object BasicTransformation extends App
 {
 
@@ -24,17 +28,31 @@ object BasicTransformation extends App
          |when an unknown printer took a galley of type and scrambled it to make a type
          |specimen book.""".stripMargin
          
-    val dateSource = Source(5 seconds, 1 second, LocalDateTime.now())
+    def currentDate = LocalDateTime.now() 
+         
+    //sources
     val textSource = Source(() => text.split("\\s").iterator)
-    
-    val makeUpper = Flow[String].map(_.toUpperCase)
-    
+    val intSource = Source(1 to 30)
+
+    //pipes
+    val filterEmptyAndMakeUpper = Flow[String].filter(!_.isEmpty())map(_.toUpperCase)
+    val getSqrt = Flow[Int].map(Math.sqrt(_))
+
+    //output sink
     val printSink = Sink.foreach[Any] {
       println(_)
     }
     
-    textSource.via(makeUpper).to(printSink).run()
-      
-    dateSource.to(printSink).run()
+    //put pipes together and run them
+    textSource.via(filterEmptyAndMakeUpper).to(printSink).run()
+    intSource.via(getSqrt).to(printSink).run()
+
+    //shutdown after some time
+    system.scheduler.scheduleOnce(15 seconds, new Runnable {
+      override def run(): Unit = {
+         system.shutdown
+        }
+    })
+
       
 }

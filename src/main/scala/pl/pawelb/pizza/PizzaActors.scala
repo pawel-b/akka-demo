@@ -15,6 +15,7 @@ import ch.qos.logback.classic.Logger
 import akka.event.LoggingReceive
 import scala.concurrent.{ future, blocking}
 
+//messages
 case class CloseCounter()
 
 sealed trait PizzaMessage

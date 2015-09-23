@@ -4,12 +4,16 @@ import akka.actor.Actor
 import akka.event.LoggingReceive
 import pl.pawelb.PizzaRequest
 
+//messages
 sealed trait CheeseMessage
 case class CheeseRequest(forPizzaRequest: PizzaRequest) extends CheeseMessage
 case class CheeseResponse(forPizzaRequest: PizzaRequest) extends CheeseMessage
 case class NoCheeseLeft(forPizzaRequest: PizzaRequest, secondsToWait: Int) extends CheeseMessage
 case class AddCheese(newCheese: Int) extends CheeseMessage
 
+/**
+ * Mutable state encapsulated in an actor
+ */
 class CheeseRepository extends Actor with akka.actor.ActorLogging {
   var cheeseLeft: Int = 0
   var waitTime: Int = 1

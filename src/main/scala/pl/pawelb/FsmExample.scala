@@ -5,16 +5,21 @@ import scala.concurrent.Future
 import scala.concurrent.duration._
 import scala.concurrent.ExecutionContext.Implicits.global
 
+//state
 sealed trait MinionState
 case object Happy extends MinionState
 case object Afraid extends MinionState
 case object Confused extends MinionState
 
+//data
 sealed trait MinionData
 case object Uninitialized extends MinionData
 case object IHaveFood extends MinionData
 case object NoFood extends MinionData
 
+/**
+ * FSM example
+ */
 object MinionFsmDemo extends App {
   val system = ActorSystem("fsmActors")
   val minion = system.actorOf(Props[MinionFsm])

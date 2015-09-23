@@ -3,6 +3,9 @@ package pl.pawelb
 import com.typesafe.config.{Config, ConfigFactory}
 import java.io.File
 
+/**
+ * Base config class to read variables from configuration files
+ */
 trait BaseConfig {
   def rootConfig: Config
 

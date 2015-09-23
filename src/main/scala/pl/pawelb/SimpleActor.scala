@@ -15,6 +15,9 @@ import java.util.Date
 import scala.io.Source
 import java.text.SimpleDateFormat
 
+/**
+ * Actor hello world
+ */
 object SimpleActors extends App {
   val system = ActorSystem("simpleActors")
   val greetingActor = system.actorOf(Props[GreetingActor])

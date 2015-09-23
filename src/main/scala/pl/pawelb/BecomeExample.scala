@@ -8,11 +8,15 @@ import akka.actor.ActorLogging
 import scala.concurrent.duration._
 import scala.concurrent.ExecutionContext.Implicits.global
 
+//messages
 sealed trait MinionMessage
 case class DogMessage() extends MinionMessage
 case class CatMessage() extends MinionMessage
 case class BananaMessage() extends MinionMessage
 
+/**
+ * Become example
+ */
 object MinionBecomeApp extends App with AkkaDemoConfig{
   implicit val system = ActorSystem("becomeActors")
   val owner = system.actorOf(Props[MinionOwner])
