@@ -27,38 +27,6 @@ case class FlickrImageInfo(title: String, link: String, date_taken: Option[Date]
 , description: String, published: Date, author: String, author_id: Option[String], tags: String)
 
 /**
- * Http req extracted to a trait
- */
-trait FlickrHttpEnabled extends AkkaDemoConfig{
-  implicit val formats = new org.json4s.DefaultFormats {
-    override def dateFormatter = new java.text.SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssXXX")
-  }
-  
-  def makeHttpRequest(url: String, timeoutMilis: Int = 1000): HttpResponse[String] = {
-      val httpRequest = Http(url).option(HttpOptions.connTimeout(timeoutMilis))
-      val requestWithProxy = hasPath("http.proxyHost") match {
-        case true  => httpRequest.proxy(getString("http.proxyHost"), getInt("http.proxyPort"))
-        case _     => httpRequest
-      }
-      requestWithProxy.asString
-  }
-
-  def getFlickrImageInfos(url: String) : List[FlickrImageInfo]= {
-      val responseBody = makeHttpRequest(url).body.replace("'", "\\\\u0027")
-      val parsedJson = parse(responseBody) \ "items"
-      parsedJson.extract[List[FlickrImageInfo]]
-  }
-
-  def getFlickrUserIdsFromImageInfos(url: String) : List[String] = {
-    getFlickrImageInfos(url).map(i => i.author_id).flatten
-  }
-
-  def getFlickrTagsFromImageInfos(url: String) : List[String] = {
-    getFlickrImageInfos(url).map(i => i.tags).filter(x => x != "").flatMap(ts => ts.split(" "))
-  }
-}
-
-/**
  * Application to get tag count of recent users favourite photos(and friends photos too)
  */
 object FlickrTagsApp extends App with AkkaDemoConfig{
@@ -134,4 +102,36 @@ class FlickrTagCounter extends Actor with ActorLogging with AkkaDemoConfig {
     }
   })
   
+}
+
+/**
+ * Http req extracted to a trait
+ */
+trait FlickrHttpEnabled extends AkkaDemoConfig{
+  implicit val formats = new org.json4s.DefaultFormats {
+    override def dateFormatter = new java.text.SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssXXX")
+  }
+  
+  def makeHttpRequest(url: String, timeoutMilis: Int = 1000): HttpResponse[String] = {
+      val httpRequest = Http(url).option(HttpOptions.connTimeout(timeoutMilis))
+      val requestWithProxy = hasPath("http.proxyHost") match {
+        case true  => httpRequest.proxy(getString("http.proxyHost"), getInt("http.proxyPort"))
+        case _     => httpRequest
+      }
+      requestWithProxy.asString
+  }
+
+  def getFlickrImageInfos(url: String) : List[FlickrImageInfo]= {
+      val responseBody = makeHttpRequest(url).body.replace("'", "\\\\u0027")
+      val parsedJson = parse(responseBody) \ "items"
+      parsedJson.extract[List[FlickrImageInfo]]
+  }
+
+  def getFlickrUserIdsFromImageInfos(url: String) : List[String] = {
+    getFlickrImageInfos(url).map(i => i.author_id).flatten
+  }
+
+  def getFlickrTagsFromImageInfos(url: String) : List[String] = {
+    getFlickrImageInfos(url).map(i => i.tags).filter(x => x != "").flatMap(ts => ts.split(" "))
+  }
 }

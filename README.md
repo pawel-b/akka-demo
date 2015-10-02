@@ -13,11 +13,11 @@ Usage:
 - explore, change the code and play around
 
 Demos available: 
-- MinionBecomeApp - become/unbecome
-- BasicTransformation - basic Akka streams example
-- MinionFsmDemo - FSM
-- SimpleActors - usual Hello World
-- PizzaDemoBasics - Akka Router demo
-- FlickrTagsApp - Flickr tag count example
-- CheckMaxThreads - check maximum nr of threads in your system
+- SimpleActors - just Hello World.
+- FlickrTagsApp - Flickr tag count example, how to use actors to run tasks concurrently.
+- PizzaDemoBasics - Akka Router demo, how to use pools of actors.
+- MinionBecomeApp - become example, how to switch between happy/afraid state of a minion.
+- MinionFsmDemo - FSM - when you need actors with more states.
+- BasicTransformation - basic Akka(reactive) streams example.
+- CheckMaxThreads - a simple test to check how many threads can we create.
 - CheckMaxActors - can we create 3M of actors?
