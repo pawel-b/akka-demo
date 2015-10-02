@@ -14,7 +14,7 @@ Usage:
 
 Demos available: 
 - SimpleActors - just Hello World.
-- FlickrTagsApp - Flickr tag count example, how to use actors to run tasks concurrently.
+- FlickrTagsApp - Flickr tag count example, how to create actors to run tasks concurrently.
 - PizzaDemoBasics - Akka Router demo, how to use pools of actors.
 - MinionBecomeApp - become example, how to switch between happy/afraid state of a minion.
 - MinionFsmDemo - FSM - when you need actors with more states.
